@@ -109,6 +109,7 @@ scanfiles(char *argv[])
             break;
         ++i;
     }
+
     return rval;
 }
 
