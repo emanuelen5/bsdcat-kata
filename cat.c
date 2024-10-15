@@ -43,11 +43,9 @@
 #include <string.h>
 #include <unistd.h>
 
-static const char *filename;
-
 static void usage(void);
 static int scanfiles(char *argv[]);
-static int raw_cat(int);
+static int raw_cat(int, char*);
 
 int main(int argc, char *argv[])
 {
@@ -76,6 +74,7 @@ scanfiles(char *argv[])
     int fd, i;
     char *path;
     int rval = 0;
+    char *filename;
 
     i = 0;
     fd = -1;
@@ -99,7 +98,7 @@ scanfiles(char *argv[])
         }
         else
         {
-            rval = rval || raw_cat(fd);
+            rval = rval || raw_cat(fd, filename);
             if (fd != STDIN_FILENO)
                 close(fd);
         }
@@ -112,7 +111,7 @@ scanfiles(char *argv[])
 }
 
 static int
-raw_cat(int rfd)
+raw_cat(int rfd, char *filename)
 {
     long pagesize;
     int off, wfd;
