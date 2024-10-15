@@ -107,12 +107,11 @@ static int
 raw_cat(int rfd, char *filename)
 {
     long pagesize;
-    int wfd;
     ssize_t nr, nw;
     char *buf = NULL;
     struct stat sbuf;
 
-    wfd = fileno(stdout);
+    int wfd = fileno(stdout);
     if (fstat(wfd, &sbuf))
         err(1, "stdout");
 
