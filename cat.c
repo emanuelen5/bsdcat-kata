@@ -50,7 +50,6 @@ static void usage(void);
 static void scanfiles(char *argv[]);
 static void raw_cat(int);
 
-
 #define SUPPORTED_FLAGS "lu"
 int main(int argc, char *argv[])
 {
@@ -58,10 +57,11 @@ int main(int argc, char *argv[])
     setlocale(LC_CTYPE, "");
 
     while ((ch = getopt(argc, argv, SUPPORTED_FLAGS)) != -1)
-        switch (ch) {
+        switch (ch)
+        {
         default:
             usage();
-    }
+        }
     argv += optind;
     argc -= optind;
 
@@ -86,18 +86,26 @@ scanfiles(char *argv[])
 
     i = 0;
     fd = -1;
-    while ((path = argv[i]) != NULL || i == 0) {
-        if (path == NULL || strcmp(path, "-") == 0) {
+    while ((path = argv[i]) != NULL || i == 0)
+    {
+        if (path == NULL || strcmp(path, "-") == 0)
+        {
             filename = "stdin";
             fd = STDIN_FILENO;
-        } else {
-            filename = path;
-            fd = open(path, 0);;
         }
-        if (fd < 0) {
+        else
+        {
+            filename = path;
+            fd = open(path, 0);
+            ;
+        }
+        if (fd < 0)
+        {
             warn("%s", path);
             rval = 1;
-        } else {
+        }
+        else
+        {
             raw_cat(fd);
             if (fd != STDIN_FILENO)
                 close(fd);
@@ -121,17 +129,18 @@ raw_cat(int rfd)
     wfd = fileno(stdout);
     if (fstat(wfd, &sbuf))
         err(1, "stdout");
-    
+
     bsize = sbuf.st_blksize;
     pagesize = sysconf(_SC_PAGESIZE);
     bsize = MAX(bsize, (size_t)pagesize);
     if ((buf = malloc(bsize)) == NULL)
         err(1, "malloc() failure of IO buffer");
     while ((nr = read(rfd, buf, bsize)) > 0)
-		for (off = 0; nr; nr -= nw, off += nw)
-			if ((nw = write(wfd, buf + off, (size_t)nr)) < 0)
-				err(1, "stdout");
-    if (nr < 0) {
+        for (off = 0; nr; nr -= nw, off += nw)
+            if ((nw = write(wfd, buf + off, (size_t)nr)) < 0)
+                err(1, "stdout");
+    if (nr < 0)
+    {
         warn("%s", filename);
         rval = 1;
     }
