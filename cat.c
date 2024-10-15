@@ -107,7 +107,7 @@ static int
 raw_cat(int rfd, char *filename)
 {
     long pagesize;
-    int off, wfd;
+    int wfd;
     ssize_t nr, nw;
     char *buf = NULL;
     struct stat sbuf;
@@ -122,7 +122,7 @@ raw_cat(int rfd, char *filename)
     if ((buf = malloc(bsize)) == NULL)
         err(1, "malloc() failure of IO buffer");
     while ((nr = read(rfd, buf, bsize)) > 0)
-        for (off = 0; nr; nr -= nw, off += nw)
+        for (int off = 0; nr; nr -= nw, off += nw)
             if ((nw = write(wfd, buf + off, (size_t)nr)) < 0)
                 err(1, "stdout");
     if (nr < 0)
