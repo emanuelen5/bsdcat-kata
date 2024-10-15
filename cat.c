@@ -120,12 +120,8 @@ raw_cat(int rfd, char *filename)
 {
     ssize_t nr, nw;
     char *buf = NULL;
-    struct stat sbuf;
 
     int wfd = fileno(stdout);
-    if (fstat(wfd, &sbuf))
-        err(1, "stdout");
-
     size_t bsize = optimal_buffer_size();
     if ((buf = malloc(bsize)) == NULL)
         err(1, "malloc() failure of IO buffer");
