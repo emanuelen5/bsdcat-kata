@@ -71,12 +71,10 @@ usage(void)
 static int
 scanfiles(char *argv[])
 {
-    int fd, i;
     char *path;
     int rval = 0;
 
-    i = 0;
-    fd = -1;
+    int i = 0;
     while ((path = argv[i]) != NULL || i == 0)
     {
         if (path == NULL || strcmp(path, "-") == 0)
@@ -85,7 +83,7 @@ scanfiles(char *argv[])
         }
         else
         {
-            fd = open(path, 0);
+            int fd = open(path, 0);
             if (fd < 0)
             {
                 warn("%s", path);
