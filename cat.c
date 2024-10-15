@@ -45,7 +45,7 @@
 
 static void usage(void);
 static int scanfiles(char *argv[]);
-static int raw_cat(int, char*);
+static int raw_cat(int, char *);
 
 int main(int argc, char *argv[])
 {
@@ -74,7 +74,6 @@ scanfiles(char *argv[])
     int fd, i;
     char *path;
     int rval = 0;
-    char *filename;
 
     i = 0;
     fd = -1;
@@ -82,25 +81,22 @@ scanfiles(char *argv[])
     {
         if (path == NULL || strcmp(path, "-") == 0)
         {
-            filename = "stdin";
-            fd = STDIN_FILENO;
+            rval = rval || raw_cat(STDIN_FILENO, "stdin");
         }
         else
         {
-            filename = path;
             fd = open(path, 0);
-            ;
-        }
-        if (fd < 0)
-        {
-            warn("%s", path);
-            rval = 1;
-        }
-        else
-        {
-            rval = rval || raw_cat(fd, filename);
-            if (fd != STDIN_FILENO)
-                close(fd);
+            if (fd < 0)
+            {
+                warn("%s", path);
+                rval = 1;
+            }
+            else
+            {
+                rval = rval || raw_cat(fd, path);
+                if (fd != STDIN_FILENO)
+                    close(fd);
+            }
         }
         if (path == NULL)
             break;
