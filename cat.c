@@ -55,10 +55,10 @@ int main(int argc, char *argv[])
     while ((ch = getopt(argc, argv, "h")) != -1)
         if (ch == 'h')
             usage();
-    argv += optind;
-    int path_count = argc - optind;
 
-    int rval = scanfiles(argv, argc);
+    char **paths = argv + optind;
+    int path_count = argc - optind;
+    int rval = scanfiles(paths, path_count);
     return rval;
 }
 
