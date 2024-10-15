@@ -1,9 +1,7 @@
 
-CFLAGS=-DNO_UDOM_SUPPORT -DBOOTSTRAP_CAT
+CFLAGS=-Werror
 
 cat: cat.c
-
-cat.c: cat.h compat.h
 
 clean:
 	rm -rf cat *.gcno *.gcda *.gcov
@@ -15,5 +13,5 @@ coverage: CFLAGS += --coverage
 coverage: clean cat test
 	gcov cat
 	
-cat.c: compat.h Makefile
+cat.c: Makefile
 	touch cat.c
