@@ -101,7 +101,7 @@ scanfiles(char *argv[])
         }
         else
         {
-            raw_cat(fd);
+            rval = rval || raw_cat(fd);
             if (fd != STDIN_FILENO)
                 close(fd);
         }
