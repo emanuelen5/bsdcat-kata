@@ -32,68 +32,27 @@
  * SUCH DAMAGE.
  */
 
-#if 0
-#ifndef lint
-static char const copyright[] =
-"@(#) Copyright (c) 1989, 1993\n\
-    The Regents of the University of California.  All rights reserved.\n";
-#endif /* not lint */
-#endif
-
-#ifndef lint
-#if 0
-static char sccsid[] = "@(#)cat.c	8.2 (Berkeley) 4/27/95";
-#endif
-#endif /* not lint */
-#include <sys/cdefs.h>
-//__FBSDID("$FreeBSD$");
-
-//#include <sys/capsicum.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#ifndef NO_UDOM_SUPPORT
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <netdb.h>
-#endif
 
-//#include <capsicum_helpers.h>
-#include <ctype.h>
 #include <err.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <wchar.h>
-#include <wctype.h>
-
-//#include <libcasper.h>
-//#include <casper/cap_fileargs.h>
-//#include <casper/cap_net.h>
 
 #include "compat.h"
 
-static int bflag, eflag, lflag, nflag, sflag, tflag, vflag;
+static int lflag;
 static int rval;
 static const char *filename;
-// static fileargs_t *fa;
 
 static void usage(void) __dead2;
 static void scanfiles(char *argv[], int cooked);
-#ifndef BOOTSTRAP_CAT
-static void cook_cat(FILE *);
-static ssize_t in_kernel_copy(int);
-#endif
 static void raw_cat(int);
 
-#ifndef NO_UDOM_SUPPORT
-static cap_channel_t *capnet;
-
-static int udom_open(const char *path, int flags);
-#endif
 
 /*
  * Memory strategy threshold, in pages: if physmem is larger than this,
@@ -118,60 +77,7 @@ static int udom_open(const char *path, int flags);
  * that locks the output file before writing to it. However, for now
  * bootstrapping cat without multibyte support is the simpler solution.
  */
-#ifdef BOOTSTRAP_CAT
 #define SUPPORTED_FLAGS "lu"
-#else
-#define SUPPORTED_FLAGS "belnstuv"
-#endif
-
-#ifndef NO_UDOM_SUPPORT
-static void
-init_casper_net(cap_channel_t *casper)
-{
-    cap_net_limit_t *limit;
-    int familylimit;
-
-    capnet = cap_service_open(casper, "system.net");
-    if (capnet == NULL)
-	err(EXIT_FAILURE, "unable to create network service");
-
-    limit = cap_net_limit_init(capnet, CAPNET_NAME2ADDR |
-        CAPNET_CONNECTDNS);
-    if (limit == NULL)
-	err(EXIT_FAILURE, "unable to create limits");
-
-    familylimit = AF_LOCAL;
-    cap_net_limit_name2addr_family(limit, &familylimit, 1);
-
-    if (cap_net_limit(limit) < 0)
-	err(EXIT_FAILURE, "unable to apply limits");
-}
-#endif
-
-// static void
-// init_casper(int argc, char *argv[])
-// {
-//     cap_channel_t *casper;
-//     cap_rights_t rights;
-
-//     casper = cap_init();
-//     if (casper == NULL)
-// 	err(EXIT_FAILURE, "unable to create Casper");
-
-//     fa = fileargs_cinit(casper, argc, argv, O_RDONLY, 0,
-//         cap_rights_init(&rights, CAP_READ | CAP_FSTAT | CAP_FCNTL),
-//         FA_OPEN | FA_REALPATH);
-//     if (fa == NULL)
-// 	err(EXIT_FAILURE, "unable to create fileargs");
-
-// #ifndef NO_UDOM_SUPPORT
-//     init_casper_net(casper);
-// #endif
-
-//     cap_close(casper);
-// }
-
-int
 main(int argc, char *argv[])
 {
     int ch;
@@ -181,29 +87,11 @@ main(int argc, char *argv[])
 
     while ((ch = getopt(argc, argv, SUPPORTED_FLAGS)) != -1)
 	switch (ch) {
-	case 'b':
-	    bflag = nflag = 1;	/* -b implies -n */
-	    break;
-	case 'e':
-	    eflag = vflag = 1;	/* -e implies -v */
-	    break;
 	case 'l':
 	    lflag = 1;
 	    break;
-	case 'n':
-	    nflag = 1;
-	    break;
-	case 's':
-	    sflag = 1;
-	    break;
-	case 't':
-	    tflag = vflag = 1;	/* -t implies -v */
-	    break;
 	case 'u':
 	    setbuf(stdout, NULL);
-	    break;
-	case 'v':
-	    vflag = 1;
 	    break;
 	default:
 	    usage();
@@ -220,17 +108,7 @@ main(int argc, char *argv[])
 	    err(EXIT_FAILURE, "stdout");
     }
 
-    //init_casper(argc, argv);
-
-    //caph_cache_catpages();
-
-    // if (caph_enter_casper() < 0)
-	// err(EXIT_FAILURE, "capsicum");
-
-    if (bflag || eflag || nflag || sflag || tflag || vflag)
-	scanfiles(argv, 1);
-    else
-	scanfiles(argv, 0);
+    scanfiles(argv, 0);
     if (fclose(stdout))
 	err(1, "stdout");
     exit(rval);
@@ -251,9 +129,6 @@ scanfiles(char *argv[], int cooked __unused)
 {
     int fd, i;
     char *path;
-#ifndef BOOTSTRAP_CAT
-    FILE *fp;
-#endif
 
     i = 0;
     fd = -1;
@@ -265,35 +140,12 @@ scanfiles(char *argv[], int cooked __unused)
 	    filename = path;
 	    // fd = fileargs_open(fa, path);
 		fd = open(path, 0);;
-#ifndef NO_UDOM_SUPPORT
-	    if (fd < 0 && errno == EOPNOTSUPP)
-		fd = udom_open(path, O_RDONLY);
-#endif
 	}
 	if (fd < 0) {
 	    warn("%s", path);
 	    rval = 1;
-#ifndef BOOTSTRAP_CAT
-	} else if (cooked) {
-	    if (fd == STDIN_FILENO)
-		cook_cat(stdin);
-	    else {
-		fp = fdopen(fd, "r");
-		cook_cat(fp);
-		fclose(fp);
-	    }
-#endif
 	} else {
-#ifndef BOOTSTRAP_CAT
-	    if (in_kernel_copy(fd) == -1) {
-		if (errno == EINVAL || errno == EBADF)
-		    raw_cat(fd);
-		else
-		    err(1, "stdout");
-	    }
-#else
 	    raw_cat(fd);
-#endif
 	    if (fd != STDIN_FILENO)
 		close(fd);
 	}
@@ -302,113 +154,6 @@ scanfiles(char *argv[], int cooked __unused)
 	++i;
     }
 }
-
-#ifndef BOOTSTRAP_CAT
-static void
-cook_cat(FILE *fp)
-{
-    int ch, gobble, line, prev;
-    wint_t wch;
-
-    /* Reset EOF condition on stdin. */
-    if (fp == stdin && feof(stdin))
-	clearerr(stdin);
-
-    line = gobble = 0;
-    for (prev = '\n'; (ch = getc(fp)) != EOF; prev = ch) {
-	if (prev == '\n') {
-	    if (sflag) {
-		if (ch == '\n') {
-		    if (gobble)
-			continue;
-		    gobble = 1;
-		} else
-		    gobble = 0;
-	    }
-	    if (nflag) {
-		if (!bflag || ch != '\n') {
-		    (void)fprintf(stdout, "%6d\t", ++line);
-		    if (ferror(stdout))
-			break;
-		} else if (eflag) {
-		    (void)fprintf(stdout, "%6s\t", "");
-		    if (ferror(stdout))
-			break;
-		}
-	    }
-	}
-	if (ch == '\n') {
-	    if (eflag && putchar('$') == EOF)
-		break;
-	} else if (ch == '\t') {
-	    if (tflag) {
-		if (putchar('^') == EOF || putchar('I') == EOF)
-		    break;
-		continue;
-	    }
-	} else if (vflag) {
-	    (void)ungetc(ch, fp);
-	    /*
-	     * Our getwc(3) doesn't change file position
-	     * on error.
-	     */
-	    if ((wch = getwc(fp)) == WEOF) {
-		if (ferror(fp) && errno == EILSEQ) {
-		    clearerr(fp);
-		    /* Resync attempt. */
-		    memset(&fp->_mbstate, 0, sizeof(mbstate_t));
-		    if ((ch = getc(fp)) == EOF)
-			break;
-		    wch = ch;
-		    goto ilseq;
-		} else
-		    break;
-	    }
-	    if (!iswascii(wch) && !iswprint(wch)) {
-ilseq:
-		if (putchar('M') == EOF || putchar('-') == EOF)
-		    break;
-		wch = toascii(wch);
-	    }
-	    if (iswcntrl(wch)) {
-		ch = toascii(wch);
-		ch = (ch == '\177') ? '?' : (ch | 0100);
-		if (putchar('^') == EOF || putchar(ch) == EOF)
-		    break;
-		continue;
-	    }
-	    if (putwchar(wch) == WEOF)
-		break;
-	    ch = -1;
-	    continue;
-	}
-	if (putchar(ch) == EOF)
-	    break;
-    }
-    if (ferror(fp)) {
-	warn("%s", filename);
-	rval = 1;
-	clearerr(fp);
-    }
-    if (ferror(stdout))
-	err(1, "stdout");
-}
-
-static ssize_t
-in_kernel_copy(int rfd)
-{
-    int wfd;
-    ssize_t ret;
-
-    wfd = fileno(stdout);
-    ret = 1;
-
-    while (ret > 0)
-	ret = copy_file_range(rfd, NULL, wfd, NULL, SSIZE_MAX, 0);
-
-    return (ret);
-}
-#endif /* BOOTSTRAP_CAT */
 
 static void
 raw_cat(int rfd)
@@ -448,96 +193,3 @@ raw_cat(int rfd)
 	rval = 1;
     }
 }
-
-#ifndef NO_UDOM_SUPPORT
-
-static int
-udom_open(const char *path, int flags)
-{
-    struct addrinfo hints, *res, *res0;
-    char rpath[PATH_MAX];
-    int error, fd, serrno;
-    cap_rights_t rights;
-
-    /*
-     * Construct the unix domain socket address and attempt to connect.
-     */
-    bzero(&hints, sizeof(hints));
-    hints.ai_family = AF_LOCAL;
-
-    if (fileargs_realpath(fa, path, rpath) == NULL)
-	return (-1);
-
-    error = cap_getaddrinfo(capnet, rpath, NULL, &hints, &res0);
-    if (error) {
-	warn("%s", gai_strerror(error));
-	errno = EINVAL;
-	return (-1);
-    }
-    cap_rights_init(&rights, CAP_CONNECT, CAP_READ, CAP_WRITE,
-        CAP_SHUTDOWN, CAP_FSTAT, CAP_FCNTL);
-
-    /* Default error if something goes wrong. */
-    serrno = EINVAL;
-
-    for (res = res0; res != NULL; res = res->ai_next) {
-	fd = socket(res->ai_family, res->ai_socktype,
-	    res->ai_protocol);
-	if (fd < 0) {
-	    serrno = errno;
-	    freeaddrinfo(res0);
-	    errno = serrno;
-	    return (-1);
-	}
-	if (caph_rights_limit(fd, &rights) < 0) {
-	    serrno = errno;
-	    close(fd);
-	    freeaddrinfo(res0);
-	    errno = serrno;
-	    return (-1);
-	}
-	error = cap_connect(capnet, fd, res->ai_addr, res->ai_addrlen);
-	if (error == 0)
-	    break;
-	else {
-	    serrno = errno;
-	    close(fd);
-	}
-    }
-    freeaddrinfo(res0);
-
-    if (res == NULL) {
-	errno = serrno;
-	return (-1);
-    }
-
-    /*
-     * handle the open flags by shutting down appropriate directions
-     */
-
-    switch (flags & O_ACCMODE) {
-    case O_RDONLY:
-	cap_rights_clear(&rights, CAP_WRITE);
-	if (shutdown(fd, SHUT_WR) == -1)
-	    warn(NULL);
-	break;
-    case O_WRONLY:
-	cap_rights_clear(&rights, CAP_READ);
-	if (shutdown(fd, SHUT_RD) == -1)
-	    warn(NULL);
-	break;
-    default:
-	break;
-    }
-
-    cap_rights_clear(&rights, CAP_CONNECT, CAP_SHUTDOWN);
-    if (caph_rights_limit(fd, &rights) < 0) {
-	serrno = errno;
-	close(fd);
-	errno = serrno;
-	return (-1);
-    }
-    return (fd);
-}
-
-#endif
