@@ -49,9 +49,9 @@ static int raw_cat(int, char *);
 
 int main(int argc, char *argv[])
 {
-    int ch;
     setlocale(LC_CTYPE, "");
 
+    int ch;
     while ((ch = getopt(argc, argv, "h")) != -1)
         if (ch == 'h')
             usage();
