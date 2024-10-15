@@ -59,7 +59,6 @@ int main(int argc, char *argv[])
         if (ch == 'h')
             usage();
     argv += optind;
-    argc -= optind;
 
     scanfiles(argv);
     if (fclose(stdout))
