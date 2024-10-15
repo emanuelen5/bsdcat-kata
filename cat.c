@@ -51,13 +51,6 @@ static void scanfiles(char *argv[]);
 static void raw_cat(int);
 
 
-/*
- * For the bootstrapped cat binary (needed for locked appending to METALOG), we
- * disable all flags except -l and -u to avoid non-portable function calls.
- * In the future we may instead want to write a small portable bootstrap tool
- * that locks the output file before writing to it. However, for now
- * bootstrapping cat without multibyte support is the simpler solution.
- */
 #define SUPPORTED_FLAGS "lu"
 int main(int argc, char *argv[])
 {
