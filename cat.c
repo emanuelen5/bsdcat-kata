@@ -43,12 +43,11 @@
 #include <string.h>
 #include <unistd.h>
 
-static int rval;
 static const char *filename;
 
 static void usage(void);
-static void scanfiles(char *argv[]);
-static void raw_cat(int);
+static int scanfiles(char *argv[]);
+static int raw_cat(int);
 
 int main(int argc, char *argv[])
 {
@@ -60,10 +59,10 @@ int main(int argc, char *argv[])
             usage();
     argv += optind;
 
-    scanfiles(argv);
+    int rval = scanfiles(argv);
     if (fclose(stdout))
         err(1, "stdout");
-    exit(rval);
+    return rval;
 }
 
 static void
@@ -73,11 +72,12 @@ usage(void)
     exit(1);
 }
 
-static void
+static int
 scanfiles(char *argv[])
 {
     int fd, i;
     char *path;
+    int rval = 0;
 
     i = 0;
     fd = -1;
@@ -109,9 +109,10 @@ scanfiles(char *argv[])
             break;
         ++i;
     }
+    return rval;
 }
 
-static void
+static int
 raw_cat(int rfd)
 {
     long pagesize;
@@ -137,6 +138,7 @@ raw_cat(int rfd)
     if (nr < 0)
     {
         warn("%s", filename);
-        rval = 1;
+        return 1;
     }
+    return 0;
 }
