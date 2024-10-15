@@ -44,7 +44,7 @@
 #include <unistd.h>
 
 static void usage(void);
-static int scanfiles(char *argv[]);
+static int scanfiles(char *paths[], int path_count);
 static int raw_cat(int, char *);
 
 int main(int argc, char *argv[])
@@ -56,8 +56,9 @@ int main(int argc, char *argv[])
         if (ch == 'h')
             usage();
     argv += optind;
+    int path_count = argc - optind;
 
-    int rval = scanfiles(argv);
+    int rval = scanfiles(argv, argc);
     return rval;
 }
 
@@ -69,14 +70,15 @@ usage(void)
 }
 
 static int
-scanfiles(char *argv[])
+scanfiles(char *paths[], int path_count)
 {
-    char *path;
     int rval = 0;
-
-    int i = 0;
-    while ((path = argv[i]) != NULL || i == 0)
+    for (int i = 0; i < path_count; i++)
     {
+        char *path = paths[i];
+        if (path == NULL)
+            break;
+
         if (path == NULL || strcmp(path, "-") == 0)
         {
             rval = rval || raw_cat(STDIN_FILENO, "stdin");
@@ -96,9 +98,6 @@ scanfiles(char *argv[])
                     close(fd);
             }
         }
-        if (path == NULL)
-            break;
-        ++i;
     }
 
     return rval;
