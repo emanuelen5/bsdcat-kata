@@ -102,6 +102,19 @@ scanfiles(char *paths[], int path_count)
     return rval;
 }
 
+static size_t
+optimal_buffer_size(void)
+{
+    struct stat sbuf;
+    if (fstat(fileno(stdout), &sbuf))
+        err(1, "stdout");
+
+    size_t bsize = sbuf.st_blksize;
+    long pagesize = sysconf(_SC_PAGESIZE);
+    bsize = MAX(bsize, (size_t)pagesize);
+    return bsize;
+}
+
 static int
 raw_cat(int rfd, char *filename)
 {
@@ -113,9 +126,7 @@ raw_cat(int rfd, char *filename)
     if (fstat(wfd, &sbuf))
         err(1, "stdout");
 
-    size_t bsize = sbuf.st_blksize;
-    long pagesize = sysconf(_SC_PAGESIZE);
-    bsize = MAX(bsize, (size_t)pagesize);
+    size_t bsize = optimal_buffer_size();
     if ((buf = malloc(bsize)) == NULL)
         err(1, "malloc() failure of IO buffer");
     while ((nr = read(rfd, buf, bsize)) > 0)
