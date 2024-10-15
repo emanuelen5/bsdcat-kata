@@ -109,15 +109,14 @@ raw_cat(int rfd, char *filename)
     long pagesize;
     int off, wfd;
     ssize_t nr, nw;
-    static size_t bsize;
-    static char *buf = NULL;
+    char *buf = NULL;
     struct stat sbuf;
 
     wfd = fileno(stdout);
     if (fstat(wfd, &sbuf))
         err(1, "stdout");
 
-    bsize = sbuf.st_blksize;
+    size_t bsize = sbuf.st_blksize;
     pagesize = sysconf(_SC_PAGESIZE);
     bsize = MAX(bsize, (size_t)pagesize);
     if ((buf = malloc(bsize)) == NULL)
