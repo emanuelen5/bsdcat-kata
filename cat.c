@@ -106,7 +106,6 @@ scanfiles(char *paths[], int path_count)
 static int
 raw_cat(int rfd, char *filename)
 {
-    long pagesize;
     ssize_t nr, nw;
     char *buf = NULL;
     struct stat sbuf;
@@ -116,7 +115,7 @@ raw_cat(int rfd, char *filename)
         err(1, "stdout");
 
     size_t bsize = sbuf.st_blksize;
-    pagesize = sysconf(_SC_PAGESIZE);
+    long pagesize = sysconf(_SC_PAGESIZE);
     bsize = MAX(bsize, (size_t)pagesize);
     if ((buf = malloc(bsize)) == NULL)
         err(1, "malloc() failure of IO buffer");
