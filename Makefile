@@ -3,8 +3,6 @@ CFLAGS=-DNO_UDOM_SUPPORT -DBOOTSTRAP_CAT
 
 cat: cat.c
 
-cat.c: compat.h
-
 clean:
 	rm -rf cat *.gcno *.gcda *.gcov
 
@@ -15,5 +13,5 @@ coverage: CFLAGS += --coverage
 coverage: clean cat test
 	gcov cat
 	
-cat.c: compat.h Makefile
+cat.c: Makefile
 	touch cat.c
