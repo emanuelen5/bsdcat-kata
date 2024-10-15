@@ -94,8 +94,7 @@ scanfiles(char *paths[], int path_count)
             else
             {
                 rval = rval || raw_cat(fd, path);
-                if (fd != STDIN_FILENO)
-                    close(fd);
+                close(fd);
             }
         }
     }
