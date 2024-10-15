@@ -76,9 +76,6 @@ scanfiles(char *paths[], int path_count)
     for (int i = 0; i < path_count; i++)
     {
         char *path = paths[i];
-        if (path == NULL)
-            break;
-
         if (path == NULL || strcmp(path, "-") == 0)
         {
             rval = rval || raw_cat(STDIN_FILENO, "stdin");
