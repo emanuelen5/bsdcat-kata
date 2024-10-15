@@ -1,5 +1,5 @@
 
-CFLAGS=
+CFLAGS=-Werror
 
 cat: cat.c
 
