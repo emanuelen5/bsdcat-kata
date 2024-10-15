@@ -50,18 +50,14 @@ static void usage(void);
 static void scanfiles(char *argv[]);
 static void raw_cat(int);
 
-#define SUPPORTED_FLAGS "lu"
 int main(int argc, char *argv[])
 {
     int ch;
     setlocale(LC_CTYPE, "");
 
-    while ((ch = getopt(argc, argv, SUPPORTED_FLAGS)) != -1)
-        switch (ch)
-        {
-        default:
+    while ((ch = getopt(argc, argv, "h")) != -1)
+        if (ch == 'h')
             usage();
-        }
     argv += optind;
     argc -= optind;
 
@@ -74,7 +70,7 @@ int main(int argc, char *argv[])
 static void
 usage(void)
 {
-    fprintf(stderr, "usage: cat [-" SUPPORTED_FLAGS "] [file ...]\n");
+    fprintf(stderr, "usage: cat [-] [file ...]\n");
     exit(1);
 }
 

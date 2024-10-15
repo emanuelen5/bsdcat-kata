@@ -1,2 +1,1 @@
-../cat: invalid option -- 'h'
-usage: cat [-lu] [file ...]
+usage: cat [-] [file ...]
