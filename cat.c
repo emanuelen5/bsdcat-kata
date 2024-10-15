@@ -60,8 +60,6 @@ int main(int argc, char *argv[])
     argv += optind;
 
     int rval = scanfiles(argv);
-    if (fclose(stdout))
-        err(1, "stdout");
     return rval;
 }
 
